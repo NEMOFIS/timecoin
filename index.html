@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Token Claimer</title>
+  <style>
+    body { font-family: Arial; padding: 20px; background: #111; color: #eee; }
+    input, textarea, button {
+      width: 100%;
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 5px;
+      border: none;
+    }
+    textarea { height: 120px; }
+    button { background: #00c853; color: white; cursor: pointer; }
+    #log {
+      margin-top: 20px;
+      background: black;
+      padding: 10px;
+      height: 300px;
+      overflow-y: auto;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+
+<h2>Token Claimer</h2>
+
+<label>Wallet Address</label>
+<input id="wallet" placeholder="0x..." />
+
+<label>Paste TX Hashes</label>
+<textarea id="hashInput" placeholder="one per line"></textarea>
+
+<button onclick="saveHashes()">Save Hashes</button>
+<button onclick="start()">Start Claim</button>
+
+<div id="log"></div>
+
+<script>
+let hashList = [];
+
+function log(msg) {
+  const el = document.getElementById("log");
+  el.innerHTML += msg + "<br>";
+  el.scrollTop = el.scrollHeight;
+}
+
+function saveHashes() {
+  const input = document.getElementById("hashInput").value;
+  const newHashes = input.split("\n").map(x => x.trim()).filter(Boolean);
+
+  hashList.push(...newHashes);
+
+  log(`Saved ${newHashes.length} hashes. Total: ${hashList.length}`);
+}
+
+async function start() {
+  const wallet = document.getElementById("wallet").value;
+
+  if (!wallet || hashList.length === 0) {
+    alert("Wallet or hash list missing");
+    return;
+  }
+
+  log("Starting...\n");
+
+  for (let i = 0; i < hashList.length; i++) {
+    const txHash = hashList[i];
+
+    log(`[${i+1}/${hashList.length}] Sending: ${txHash}`);
+
+    try {
+      const res = await fetch("/api/claim", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json"
+        },
+        body: JSON.stringify({
+          txHash,
+          wallet
+        })
+      });
+
+      const data = await res.json();
+
+      log(`Status: ${data.status}`);
+      log(`Response: ${data.raw}`);
+    } catch (e) {
+      log(`Error: ${e.message}`);
+    }
+
+    await new Promise(r => setTimeout(r, 10000)); // 10 sec delay
+  }
+
+  log("Done.");
+}
+</script>
+
+</body>
+</html>
