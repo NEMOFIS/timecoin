@@ -11,13 +11,10 @@
     --muted: #9ca3af;
     --text: #e5e7eb;
     --accent: #22c55e;
-    --accent-soft: #14532d;
     --border: #1f2937;
   }
 
-  * {
-    box-sizing: border-box;
-  }
+  * { box-sizing: border-box; }
 
   body {
     margin: 0;
@@ -38,7 +35,7 @@
     margin-bottom: 5px;
   }
 
-  p.subtitle {
+  .subtitle {
     color: var(--muted);
     margin-bottom: 25px;
     font-size: 14px;
@@ -93,6 +90,9 @@
     font-size: 14px;
     cursor: pointer;
     transition: 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .btn-primary {
@@ -114,6 +114,29 @@
     border-color: var(--accent);
   }
 
+  .step {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    margin-right: 6px;
+    border-radius: 50%;
+    font-size: 11px;
+    background: #1f2937;
+    color: #9ca3af;
+  }
+
+  .processing {
+    text-align: center;
+    padding: 10px;
+    border-radius: 8px;
+    background: #020617;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 14px;
+  }
+
   .log {
     background: #020617;
     border: 1px solid var(--border);
@@ -126,14 +149,10 @@
     line-height: 1.5;
   }
 
-  .log-entry {
-    margin-bottom: 6px;
-  }
-
+  .log-entry { margin-bottom: 6px; }
   .success { color: #4ade80; }
   .error { color: #f87171; }
   .info { color: #60a5fa; }
-
 </style>
 </head>
 
@@ -152,9 +171,13 @@
     <label>Transaction Hashes</label>
     <textarea id="hashInput" placeholder="Paste one hash per line"></textarea>
 
-    <div class="row">
-      <button class="btn-secondary" onclick="saveHashes()">Save</button>
-      <button class="btn-primary" onclick="start()">Start Claim</button>
+    <div class="row" id="actionBar">
+      <button class="btn-secondary" onclick="saveHashes()">
+        <span class="step">1</span> Save
+      </button>
+      <button class="btn-primary" onclick="start()">
+        <span class="step">2</span> Start Claim
+      </button>
     </div>
   </div>
 
@@ -199,6 +222,23 @@ async function start() {
     return;
   }
 
+  const actionBar = document.getElementById("actionBar");
+
+  actionBar.innerHTML = `
+    <div class="processing" id="processingText">
+      Processing.
+    </div>
+  `;
+
+  let dots = 1;
+  const interval = setInterval(() => {
+    const el = document.getElementById("processingText");
+    if (!el) return;
+
+    dots = (dots % 3) + 1;
+    el.textContent = "Processing" + ".".repeat(dots);
+  }, 500);
+
   log("Starting claim process...", "info");
 
   for (let i = 0; i < hashList.length; i++) {
@@ -229,6 +269,10 @@ async function start() {
 
     await new Promise(r => setTimeout(r, 10000));
   }
+
+  clearInterval(interval);
+
+  document.getElementById("processingText").textContent = "Completed";
 
   log("Process completed.", "success");
 }
