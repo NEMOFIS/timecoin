@@ -1,59 +1,194 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Token Claimer</title>
-  <style>
-    body { font-family: Arial; padding: 20px; background: #111; color: #eee; }
-    input, textarea, button {
-      width: 100%;
-      margin-top: 10px;
-      padding: 10px;
-      border-radius: 5px;
-      border: none;
-    }
-    textarea { height: 120px; }
-    button { background: #00c853; color: white; cursor: pointer; }
-    #log {
-      margin-top: 20px;
-      background: black;
-      padding: 10px;
-      height: 300px;
-      overflow-y: auto;
-      font-size: 12px;
-    }
-  </style>
+<meta charset="UTF-8" />
+<title>Token Claim Dashboard</title>
+
+<style>
+  :root {
+    --bg: #0f172a;
+    --card: #111827;
+    --muted: #9ca3af;
+    --text: #e5e7eb;
+    --accent: #22c55e;
+    --accent-soft: #14532d;
+    --border: #1f2937;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  .container {
+    max-width: 800px;
+    margin: 40px auto;
+    padding: 20px;
+  }
+
+  h1 {
+    font-size: 22px;
+    font-weight: 600;
+    margin-bottom: 5px;
+  }
+
+  p.subtitle {
+    color: var(--muted);
+    margin-bottom: 25px;
+    font-size: 14px;
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+
+  label {
+    font-size: 13px;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 6px;
+  }
+
+  input, textarea {
+    width: 100%;
+    background: #020617;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px;
+    color: var(--text);
+    font-size: 14px;
+    outline: none;
+  }
+
+  textarea {
+    min-height: 120px;
+    resize: vertical;
+  }
+
+  input:focus, textarea:focus {
+    border-color: var(--accent);
+  }
+
+  .row {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
+  }
+
+  button {
+    flex: 1;
+    padding: 10px;
+    border-radius: 8px;
+    border: none;
+    font-size: 14px;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #052e16;
+  }
+
+  .btn-primary:hover {
+    background: #16a34a;
+  }
+
+  .btn-secondary {
+    background: #020617;
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+
+  .btn-secondary:hover {
+    border-color: var(--accent);
+  }
+
+  .log {
+    background: #020617;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px;
+    height: 300px;
+    overflow-y: auto;
+    font-family: ui-monospace, monospace;
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  .log-entry {
+    margin-bottom: 6px;
+  }
+
+  .success { color: #4ade80; }
+  .error { color: #f87171; }
+  .info { color: #60a5fa; }
+
+</style>
 </head>
+
 <body>
 
-<h2>Token Claimer</h2>
+<div class="container">
+  <h1>Token Claim Dashboard</h1>
+  <p class="subtitle">Sequential claim execution with controlled pacing</p>
 
-<label>Wallet Address</label>
-<input id="wallet" placeholder="0x..." />
+  <div class="card">
+    <label>Wallet Address</label>
+    <input id="wallet" placeholder="0x..." />
+  </div>
 
-<label>Paste TX Hashes</label>
-<textarea id="hashInput" placeholder="one per line"></textarea>
+  <div class="card">
+    <label>Transaction Hashes</label>
+    <textarea id="hashInput" placeholder="Paste one hash per line"></textarea>
 
-<button onclick="saveHashes()">Save Hashes</button>
-<button onclick="start()">Start Claim</button>
+    <div class="row">
+      <button class="btn-secondary" onclick="saveHashes()">Save</button>
+      <button class="btn-primary" onclick="start()">Start Claim</button>
+    </div>
+  </div>
 
-<div id="log"></div>
+  <div class="card">
+    <label>Activity Log</label>
+    <div id="log" class="log"></div>
+  </div>
+</div>
 
 <script>
 let hashList = [];
 
-function log(msg) {
+function log(msg, type="info") {
   const el = document.getElementById("log");
-  el.innerHTML += msg + "<br>";
+  const line = document.createElement("div");
+
+  line.className = "log-entry " + type;
+  line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+
+  el.appendChild(line);
   el.scrollTop = el.scrollHeight;
 }
 
 function saveHashes() {
   const input = document.getElementById("hashInput").value;
-  const newHashes = input.split("\n").map(x => x.trim()).filter(Boolean);
+
+  const newHashes = input
+    .split("\n")
+    .map(x => x.trim())
+    .filter(Boolean);
 
   hashList.push(...newHashes);
 
-  log(`Saved ${newHashes.length} hashes. Total: ${hashList.length}`);
+  log(`Saved ${newHashes.length} hashes (Total: ${hashList.length})`, "info");
 }
 
 async function start() {
@@ -64,12 +199,12 @@ async function start() {
     return;
   }
 
-  log("Starting...\n");
+  log("Starting claim process...", "info");
 
   for (let i = 0; i < hashList.length; i++) {
     const txHash = hashList[i];
 
-    log(`[${i+1}/${hashList.length}] Sending: ${txHash}`);
+    log(`[${i+1}/${hashList.length}] Sending ${txHash}`, "info");
 
     try {
       const res = await fetch("/api/claim", {
@@ -77,24 +212,25 @@ async function start() {
         headers: {
           "content-type": "application/json"
         },
-        body: JSON.stringify({
-          txHash,
-          wallet
-        })
+        body: JSON.stringify({ txHash, wallet })
       });
 
       const data = await res.json();
 
-      log(`Status: ${data.status}`);
-      log(`Response: ${data.raw}`);
+      if (data.status === 200) {
+        log(`Success (${txHash})`, "success");
+      } else {
+        log(`Status ${data.status} → ${data.raw}`, "error");
+      }
+
     } catch (e) {
-      log(`Error: ${e.message}`);
+      log(`Error: ${e.message}`, "error");
     }
 
-    await new Promise(r => setTimeout(r, 10000)); // 10 sec delay
+    await new Promise(r => setTimeout(r, 10000));
   }
 
-  log("Done.");
+  log("Process completed.", "success");
 }
 </script>
 
